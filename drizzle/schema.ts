@@ -25,4 +25,19 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+/**
+ * 파이썬 코드 분석 이력 테이블
+ * 사용자가 입력한 코드와 생성된 설명을 저장합니다.
+ */
+export const codeAnalyses = mysqlTable("code_analyses", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  code: text("code").notNull(),
+  fileName: varchar("fileName", { length: 255 }),
+  elementaryExplanation: text("elementaryExplanation"),
+  collegeExplanation: text("collegeExplanation"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CodeAnalysis = typeof codeAnalyses.$inferSelect;
+export type InsertCodeAnalysis = typeof codeAnalyses.$inferInsert;
