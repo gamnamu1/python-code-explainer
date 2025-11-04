@@ -8,16 +8,26 @@ import { Streamdown } from 'streamdown';
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Code2, Upload, BookOpen, GraduationCap } from "lucide-react";
+import { Loader2, Code2, Upload, BookOpen, GraduationCap, History, X } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function Home() {
   const { user, loading: authLoading, isAuthenticated, logout } = useAuth();
   const [code, setCode] = useState("");
   const [fileName, setFileName] = useState("");
   const [activeTab, setActiveTab] = useState<"elementary" | "college">("elementary");
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [selectedAnalysis, setSelectedAnalysis] = useState<any>(null);
+
+  const { data: historyData, isLoading: historyLoading } = trpc.codeExplainer.getHistory.useQuery(
+    undefined,
+    { enabled: isAuthenticated }
+  );
 
   const analyzeMutation = trpc.codeExplainer.analyze.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
+      setSelectedAnalysis(data);
       toast.success("코드 분석이 완료되었습니다!");
     },
     onError: (error) => {
@@ -90,6 +100,64 @@ export default function Home() {
             <h1 className="text-xl font-bold text-gray-900">파이썬 코드 설명 생성기</h1>
           </div>
           <div className="flex items-center gap-4">
+            <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <History className="h-4 w-4 mr-2" />
+                  내 분석 이력
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[80vh]">
+                <DialogHeader>
+                  <DialogTitle>코드 분석 이력</DialogTitle>
+                  <DialogDescription>
+                    과거에 분석한 코드 목록입니다. 클릭하면 저장된 설명을 다시 볼 수 있습니다.
+                  </DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="h-[60vh] pr-4">
+                  {historyLoading ? (
+                    <div className="flex items-center justify-center py-20">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : historyData && historyData.length > 0 ? (
+                    <div className="space-y-4">
+                      {historyData.map((analysis) => (
+                        <Card
+                          key={analysis.id}
+                          className="cursor-pointer hover:shadow-md transition-shadow"
+                          onClick={() => {
+                            setSelectedAnalysis(analysis);
+                            setCode(analysis.code);
+                            setFileName(analysis.fileName || "");
+                            setHistoryDialogOpen(false);
+                            toast.success("저장된 분석 결과를 불러왔습니다");
+                          }}
+                        >
+                          <CardHeader>
+                            <CardTitle className="text-base flex items-center justify-between">
+                              <span>{analysis.fileName || "코드 분석"}</span>
+                              <span className="text-xs text-gray-500 font-normal">
+                                {new Date(analysis.createdAt).toLocaleString('ko-KR')}
+                              </span>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <pre className="text-xs bg-gray-50 p-3 rounded overflow-x-auto max-h-32">
+                              <code>{analysis.code.substring(0, 200)}{analysis.code.length > 200 ? '...' : ''}</code>
+                            </pre>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-20 text-gray-500">
+                      <History className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                      <p>아직 분석한 코드가 없습니다</p>
+                    </div>
+                  )}
+                </ScrollArea>
+              </DialogContent>
+            </Dialog>
             <span className="text-sm text-gray-600">{user?.name || user?.email}</span>
             <Button variant="outline" size="sm" onClick={() => logout()}>
               로그아웃
@@ -174,7 +242,7 @@ export default function Home() {
                   <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
                   <p className="text-gray-600">AI가 코드를 분석하고 있습니다...</p>
                 </div>
-              ) : analyzeMutation.data ? (
+              ) : (selectedAnalysis || analyzeMutation.data) ? (
                 <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "elementary" | "college")}>
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="elementary" className="flex items-center gap-2">
@@ -188,12 +256,12 @@ export default function Home() {
                   </TabsList>
                   <TabsContent value="elementary" className="mt-4">
                     <div className="prose prose-sm max-w-none bg-blue-50 rounded-lg p-6">
-                      <Streamdown>{analyzeMutation.data.elementaryExplanation || "설명이 생성되지 않았습니다."}</Streamdown>
+                      <Streamdown>{(selectedAnalysis || analyzeMutation.data)?.elementaryExplanation || "설명이 생성되지 않았습니다."}</Streamdown>
                     </div>
                   </TabsContent>
                   <TabsContent value="college" className="mt-4">
                     <div className="prose prose-sm max-w-none bg-indigo-50 rounded-lg p-6">
-                      <Streamdown>{analyzeMutation.data.collegeExplanation || "설명이 생성되지 않았습니다."}</Streamdown>
+                      <Streamdown>{(selectedAnalysis || analyzeMutation.data)?.collegeExplanation || "설명이 생성되지 않았습니다."}</Streamdown>
                     </div>
                   </TabsContent>
                 </Tabs>

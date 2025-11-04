@@ -22,6 +22,24 @@ export const appRouter = router({
 
   codeExplainer: router({
     /**
+     * 사용자의 코드 분석 이력을 조회합니다.
+     */
+    getHistory: protectedProcedure.query(async ({ ctx }) => {
+      const analyses = await getUserCodeAnalyses(ctx.user.id);
+      return analyses;
+    }),
+
+    /**
+     * 특정 분석 결과를 ID로 조회합니다.
+     */
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const analysis = await getCodeAnalysisById(input.id);
+        return analysis;
+      }),
+
+    /**
      * 파이썬 코드를 분석하고 두 가지 수준의 설명을 생성합니다.
      */
     analyze: protectedProcedure
@@ -114,22 +132,6 @@ ${code}
         });
 
         return savedAnalysis;
-      }),
-
-    /**
-     * 사용자의 코드 분석 이력 조회
-     */
-    getHistory: protectedProcedure.query(async ({ ctx }) => {
-      return getUserCodeAnalyses(ctx.user.id);
-    }),
-
-    /**
-     * 특정 코드 분석 결과 조회
-     */
-    getById: protectedProcedure
-      .input(z.object({ id: z.number() }))
-      .query(async ({ input }) => {
-        return getCodeAnalysisById(input.id);
       }),
   }),
 });
