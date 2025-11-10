@@ -199,14 +199,4 @@ def add_1(x, y):
 
 이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 
-## 🙏 감사의 말
-
-- [Manus](https://manus.im): AI 기반 개발 플랫폼 및 LLM API 제공
-- [shadcn/ui](https://ui.shadcn.com/): 아름다운 UI 컴포넌트
-- [tRPC](https://trpc.io/): 타입 안전 API 프레임워크
-
-## 📧 연락처
-
-프로젝트 관련 문의: [GitHub Issues](https://github.com/gamnamu1/python-code-explainer/issues)
-
 ---
